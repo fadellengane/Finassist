@@ -164,6 +164,29 @@ aux composants qui les consomment.
   premier lancement pour que l'app ne soit pas vide — supprimez-les
   librement depuis l'onglet Transactions.
 
+## Évolutions récentes
+
+- **Prévisions sur une durée personnalisée** : un sélecteur (3 / 6 / 12
+  mois, ou une valeur libre jusqu'à 36) contrôle directement le paramètre
+  `months` de `getForecast()`, déjà générique. Toucher une carte de mois
+  ouvre `MonthDetailSheet`, qui liste les transactions réellement associées
+  à ce mois via la nouvelle fonction `getTransactionsForMonth()` — elle
+  déplie les transactions récurrentes en occurrences concrètes avec une
+  date calculée (contrairement à `flowBetween`, qui ne fait que sommer).
+- **Modification d'une transaction** : `TransactionItem` expose un bouton
+  crayon en plus de la corbeille. Il ouvre `TransactionForm` pré-rempli
+  (prop `existing`) ; la validation appelle la nouvelle action de store
+  `updateTransaction(id, updates)` au lieu de recréer une entrée. Pour une
+  échéance d'un achat en plusieurs fois, seule cette écriture est modifiée
+  — l'échéancier existant (`installment`) est préservé tel quel.
+- **Design plus épuré** : palette éclaircie (fonds quasi blancs,
+  `tailwind.config.ts`), graisses de texte allégées dans toute
+  l'application (titres en `font-medium`, corps en `font-light`/`font-normal`,
+  montants en `font-medium` pour rester lisibles sans être criards), padding
+  des cartes et des sheets augmenté, ombres encore plus discrètes, icônes à
+  trait plus fin. La police Manrope charge désormais aussi la graisse 300
+  pour ce rendu plus fin.
+
 ## Personnaliser
 
 - **Couleurs / rayons / ombres** : `tailwind.config.ts`.
