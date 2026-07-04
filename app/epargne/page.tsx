@@ -15,24 +15,24 @@ export default function EpargnePage() {
   const [contributeGoalId, setContributeGoalId] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4 px-5 pt-6">
+    <div className="space-y-6 px-6 pt-8">
       <div className="mb-1 flex items-center justify-between px-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">Épargne</h1>
+        <h1 className="text-2xl font-medium tracking-tight">Épargne</h1>
         <button
           onClick={() => setOpenCreate(true)}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white shadow-soft"
           aria-label="Créer un objectif"
         >
-          <Plus size={20} />
+          <Plus size={20} strokeWidth={1.75} />
         </button>
       </div>
 
       {goals.length === 0 ? (
-        <Card className="text-center text-sm text-muted-light dark:text-muted-dark">
+        <Card className="text-center text-sm font-light text-muted-light dark:text-muted-dark">
           Aucun objectif pour l&rsquo;instant. Crée-en un pour commencer à épargner.
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {goals.map((goal) => (
             <GoalCard
               key={goal.id}
