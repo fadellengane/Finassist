@@ -11,31 +11,48 @@ import {
   RECURRENCE_LABELS,
   TRANSACTION_TYPE_META,
 } from "@/lib/finance/categories";
-import type { Category, Recurrence, TransactionType } from "@/lib/types";
+import type { Category, Recurrence, Transaction, TransactionType } from "@/lib/types";
 import { todayISO } from "@/lib/utils/format";
 
-export function TransactionForm({ onDone }: { onDone: () => void }) {
+export function TransactionForm({
+  onDone,
+  existing,
+}: {
+  onDone: () => void;
+  /** Si fourni, le formulaire passe en mode édition pour cette transaction. */
+  existing?: Transaction;
+}) {
   const addTransaction = useFinanceStore((s) => s.addTransaction);
+  const updateTransaction = useFinanceStore((s) => s.updateTransaction);
   const addInstallmentPurchase = useFinanceStore((s) => s.addInstallmentPurchase);
 
-  const [type, setType] = useState<TransactionType>("depense");
+  const isEditing = Boolean(existing);
+  const defaultMeta = TRANSACTION_TYPE_META[existing?.type ?? "depense"];
+
+  const [type, setType] = useState<TransactionType>(existing?.type ?? "depense");
   const meta = TRANSACTION_TYPE_META[type];
 
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(todayISO());
-  const [category, setCategory] = useState<Category>(meta.defaultCategory);
-  const [recurrence, setRecurrence] = useState<Recurrence>(meta.defaultRecurrence);
-  const [note, setNote] = useState("");
+  const [name, setName] = useState(existing?.name ?? "");
+  const [amount, setAmount] = useState(existing ? String(existing.amount) : "");
+  const [date, setDate] = useState(existing?.date ?? todayISO());
+  const [category, setCategory] = useState<Category>(existing?.category ?? defaultMeta.defaultCategory);
+  const [recurrence, setRecurrence] = useState<Recurrence>(existing?.recurrence ?? defaultMeta.defaultRecurrence);
+  const [note, setNote] = useState(existing?.note ?? "");
 
   const [paymentMode, setPaymentMode] = useState<"comptant" | "plusieurs_fois">("comptant");
   const [installmentsCount, setInstallmentsCount] = useState("3");
 
+  // En édition, on ne propose jamais de régénérer un échéancier : on modifie
+  // uniquement l'écriture sélectionnée (le champ `installment` d'origine est conservé).
+  const showInstallmentOptions = !isEditing && type === "achat_ponctuel";
+
   function handleTypeChange(next: TransactionType) {
     setType(next);
-    const nextMeta = TRANSACTION_TYPE_META[next];
-    setCategory(nextMeta.defaultCategory);
-    setRecurrence(nextMeta.defaultRecurrence);
+    if (!isEditing) {
+      const nextMeta = TRANSACTION_TYPE_META[next];
+      setCategory(nextMeta.defaultCategory);
+      setRecurrence(nextMeta.defaultRecurrence);
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -43,7 +60,17 @@ export function TransactionForm({ onDone }: { onDone: () => void }) {
     const value = parseFloat(amount.replace(",", "."));
     if (!name.trim() || !value || value <= 0) return;
 
-    if (type === "achat_ponctuel" && paymentMode === "plusieurs_fois") {
+    if (isEditing && existing) {
+      updateTransaction(existing.id, {
+        name: name.trim(),
+        type,
+        category,
+        amount: value,
+        date,
+        recurrence,
+        note: note.trim() || undefined,
+      });
+    } else if (showInstallmentOptions && paymentMode === "plusieurs_fois") {
       addInstallmentPurchase({
         name: name.trim(),
         price: value,
@@ -66,6 +93,13 @@ export function TransactionForm({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={handleSubmit}>
+      {isEditing && existing?.installment && (
+        <p className="mb-4 rounded-2xl bg-surface2-light px-4 py-3 text-xs text-muted-light dark:bg-surface2-dark dark:text-muted-dark">
+          Échéance {existing.installment.installmentIndex}/{existing.installment.totalInstallments}
+          — seule cette écriture sera modifiée, le reste de l&rsquo;échéancier n&rsquo;est pas affecté.
+        </p>
+      )}
+
       <Field label="Type">
         <Select value={type} onChange={(e) => handleTypeChange(e.target.value as TransactionType)}>
           {QUICK_ADD_TYPES.map((t) => (
@@ -95,7 +129,7 @@ export function TransactionForm({ onDone }: { onDone: () => void }) {
         />
       </Field>
 
-      {type === "achat_ponctuel" && (
+      {showInstallmentOptions && (
         <Field label="Paiement">
           <div className="flex gap-2">
             {(["comptant", "plusieurs_fois"] as const).map((mode) => (
@@ -116,7 +150,7 @@ export function TransactionForm({ onDone }: { onDone: () => void }) {
         </Field>
       )}
 
-      {type === "achat_ponctuel" && paymentMode === "plusieurs_fois" ? (
+      {showInstallmentOptions && paymentMode === "plusieurs_fois" ? (
         <Field label="Nombre d'échéances">
           <Input
             type="number"
@@ -128,11 +162,11 @@ export function TransactionForm({ onDone }: { onDone: () => void }) {
         </Field>
       ) : null}
 
-      <Field label={paymentMode === "plusieurs_fois" ? "Date de première échéance" : "Date"}>
+      <Field label={showInstallmentOptions && paymentMode === "plusieurs_fois" ? "Date de première échéance" : "Date"}>
         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
       </Field>
 
-      {!(type === "achat_ponctuel" && paymentMode === "plusieurs_fois") && (
+      {!(showInstallmentOptions && paymentMode === "plusieurs_fois") && (
         <Field label="Récurrence">
           <Select value={recurrence} onChange={(e) => setRecurrence(e.target.value as Recurrence)}>
             {Object.entries(RECURRENCE_LABELS).map(([value, label]) => (
@@ -159,7 +193,7 @@ export function TransactionForm({ onDone }: { onDone: () => void }) {
       </Field>
 
       <Button type="submit" fullWidth className="mt-2">
-        Ajouter
+        {isEditing ? "Enregistrer les modifications" : "Ajouter"}
       </Button>
     </form>
   );
