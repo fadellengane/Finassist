@@ -17,7 +17,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md safe-bottom">
-      <div className="mx-4 mb-3 flex items-center justify-between rounded-pill border border-line-light bg-surface-light/80 px-2 py-2 shadow-soft backdrop-blur-xl dark:border-line-dark dark:bg-surface-dark/80 dark:shadow-soft-dark">
+      <div className="mx-5 mb-4 flex items-center justify-between rounded-pill border border-line-light bg-surface-light/70 px-2 py-2 shadow-soft backdrop-blur-xl dark:border-line-dark dark:bg-surface-dark/70 dark:shadow-soft-dark">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
@@ -25,12 +25,12 @@ export function BottomNav() {
               key={href}
               href={href}
               className={clsx(
-                "flex flex-1 flex-col items-center gap-1 rounded-pill py-2 transition-colors duration-200",
+                "flex flex-1 flex-col items-center gap-1 rounded-pill py-2.5 transition-colors duration-200",
                 active ? "text-accent" : "text-muted-light dark:text-muted-dark"
               )}
             >
-              <Icon size={22} strokeWidth={active ? 2.4 : 1.8} />
-              <span className="text-[10px] font-medium">{label}</span>
+              <Icon size={21} strokeWidth={active ? 2 : 1.5} />
+              <span className="text-[10px] font-light">{label}</span>
             </Link>
           );
         })}
