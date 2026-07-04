@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-manrope",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F5F5F7" },
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
     { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
 };
@@ -39,7 +39,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={manrope.variable}>
-      <body className="font-sans bg-canvas-light dark:bg-canvas-dark text-ink-light dark:text-ink-dark antialiased">
+      <body className="font-sans font-normal bg-canvas-light dark:bg-canvas-dark text-ink-light dark:text-ink-dark antialiased">
         <Providers>
           <div className="mx-auto flex min-h-screen max-w-md flex-col">
             <main className="flex-1 pb-28 safe-top">{children}</main>
