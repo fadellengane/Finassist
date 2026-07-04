@@ -40,12 +40,12 @@ export default function SimulateurPage() {
   }, [values, validPrice, price, transactions, startingBalance, startingBalanceDate]);
 
   return (
-    <div className="space-y-4 px-5 pt-6">
+    <div className="space-y-6 px-6 pt-8">
       <div className="mb-1 flex items-center gap-3 px-1">
         <Link href="/" className="rounded-full p-1.5 text-muted-light dark:text-muted-dark" aria-label="Retour">
-          <ChevronLeft size={22} />
+          <ChevronLeft size={22} strokeWidth={1.5} />
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight">Simuler un achat</h1>
+        <h1 className="text-2xl font-medium tracking-tight">Simuler un achat</h1>
       </div>
 
       <SimulatorForm values={values} onChange={setValues} />
@@ -53,7 +53,7 @@ export default function SimulateurPage() {
       {result ? (
         <SimulatorResult result={result} />
       ) : (
-        <p className="px-1 text-sm text-muted-light dark:text-muted-dark">
+        <p className="px-1 text-sm font-light text-muted-light dark:text-muted-dark">
           Renseigne un prix pour voir le résultat immédiatement.
         </p>
       )}
