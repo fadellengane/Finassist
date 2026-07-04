@@ -21,11 +21,11 @@ export function GoalCard({
   const pct = Math.round(progress.progressRatio * 100);
 
   return (
-    <Card className="!p-5">
-      <div className="mb-3 flex items-start justify-between">
+    <Card className="!p-6">
+      <div className="mb-4 flex items-start justify-between">
         <div>
-          <p className="text-[15px] font-bold">{goal.name}</p>
-          <p className="text-xs text-muted-light dark:text-muted-dark">
+          <p className="text-[15px] font-normal">{goal.name}</p>
+          <p className="text-xs font-light text-muted-light dark:text-muted-dark">
             Objectif pour le {formatDate(goal.targetDate)}
           </p>
         </div>
@@ -46,21 +46,21 @@ export function GoalCard({
       </div>
 
       <div className="mb-4 flex items-center justify-between text-sm">
-        <span className="tabular font-semibold">{formatCurrency(progress.currentAmount)}</span>
-        <span className="text-muted-light dark:text-muted-dark">
+        <span className="tabular font-medium">{formatCurrency(progress.currentAmount)}</span>
+        <span className="font-light text-muted-light dark:text-muted-dark">
           sur {formatCurrency(goal.targetAmount)}
         </span>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 text-xs text-muted-light dark:text-muted-dark">
+      <div className="mb-5 grid grid-cols-2 gap-3 text-xs font-light text-muted-light dark:text-muted-dark">
         <div>
-          <p className="tabular text-sm font-semibold text-ink-light dark:text-ink-dark">
+          <p className="tabular text-sm font-medium text-ink-light dark:text-ink-dark">
             {formatCurrency(progress.remainingAmount)}
           </p>
           <p>Montant restant</p>
         </div>
         <div>
-          <p className="tabular text-sm font-semibold text-ink-light dark:text-ink-dark">
+          <p className="tabular text-sm font-medium text-ink-light dark:text-ink-dark">
             {progress.estimatedMonthsLeft !== null ? `${progress.estimatedMonthsLeft} mois` : "—"}
           </p>
           <p>Temps estimé</p>
@@ -69,7 +69,7 @@ export function GoalCard({
 
       <button
         onClick={() => onContribute(goal.id)}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-soft py-3 text-sm font-semibold text-accent"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-soft py-3 text-sm font-normal text-accent"
       >
         <PlusCircle size={16} />
         Ajouter un versement
