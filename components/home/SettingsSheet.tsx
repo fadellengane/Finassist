@@ -24,7 +24,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
   return (
     <Sheet open={open} onClose={onClose} title="Réglages">
       <div className="mb-6 flex items-center justify-between rounded-2xl bg-surface2-light p-4 dark:bg-surface2-dark">
-        <div className="flex items-center gap-2 text-sm font-medium">
+        <div className="flex items-center gap-2 text-sm font-light">
           {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
           Mode {theme === "dark" ? "sombre" : "clair"}
         </div>
@@ -49,7 +49,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       <Field label="Valable à partir du">
         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </Field>
-      <p className="mb-4 text-xs text-muted-light dark:text-muted-dark">
+      <p className="mb-4 text-xs font-light text-muted-light dark:text-muted-dark">
         C&rsquo;est le solde réel de ton compte à cette date. Toutes les prévisions sont
         recalculées à partir de cette référence.
       </p>
