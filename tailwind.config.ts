@@ -10,56 +10,56 @@ const config: Config = {
     extend: {
       colors: {
         canvas: {
-          light: "#F5F5F7",
+          light: "#FFFFFF",
           dark: "#000000",
         },
         surface: {
           light: "#FFFFFF",
-          dark: "#1C1C1E",
+          dark: "#161617",
         },
         surface2: {
-          light: "#F0F0F3",
-          dark: "#2C2C2E",
+          light: "#FAFAFB",
+          dark: "#232324",
         },
         ink: {
-          light: "#0B0B0D",
+          light: "#161618",
           dark: "#F5F5F7",
         },
         muted: {
-          light: "#6E6E76",
-          dark: "#98989F",
+          light: "#8A8A93",
+          dark: "#909096",
         },
         line: {
-          light: "rgba(0,0,0,0.06)",
-          dark: "rgba(255,255,255,0.08)",
+          light: "rgba(0,0,0,0.045)",
+          dark: "rgba(255,255,255,0.07)",
         },
         accent: {
           DEFAULT: "#0A84FF",
-          soft: "rgba(10, 132, 255, 0.12)",
+          soft: "rgba(10, 132, 255, 0.1)",
         },
         good: {
           DEFAULT: "#34C759",
-          soft: "rgba(52, 199, 89, 0.14)",
+          soft: "rgba(52, 199, 89, 0.1)",
         },
         warn: {
           DEFAULT: "#FF9F0A",
-          soft: "rgba(255, 159, 10, 0.14)",
+          soft: "rgba(255, 159, 10, 0.1)",
         },
         bad: {
           DEFAULT: "#FF453A",
-          soft: "rgba(255, 69, 58, 0.14)",
+          soft: "rgba(255, 69, 58, 0.1)",
         },
       },
       fontFamily: {
         sans: ["var(--font-manrope)", "system-ui", "sans-serif"],
       },
       borderRadius: {
-        card: "28px",
+        card: "26px",
         pill: "999px",
       },
       boxShadow: {
-        soft: "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05)",
-        "soft-dark": "0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35)",
+        soft: "0 1px 1px rgba(0,0,0,0.02), 0 6px 20px rgba(0,0,0,0.035)",
+        "soft-dark": "0 1px 1px rgba(0,0,0,0.2), 0 6px 20px rgba(0,0,0,0.3)",
       },
       keyframes: {
         "rise-in": {
