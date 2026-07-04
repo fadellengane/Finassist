@@ -31,9 +31,9 @@ export default function HomePage() {
   const risk = riskFromBalance(worstBalance);
 
   return (
-    <div className="space-y-4 px-5 pt-6">
+    <div className="space-y-6 px-6 pt-8">
       <div className="mb-1 flex items-center justify-between px-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">Accueil</h1>
+        <h1 className="text-2xl font-medium tracking-tight">Accueil</h1>
         <button
           onClick={() => setSettingsOpen(true)}
           className="rounded-full p-2 text-muted-light dark:text-muted-dark"
@@ -57,14 +57,14 @@ export default function HomePage() {
       </Link>
 
       <Link href="/coach">
-        <Card className="flex items-center justify-between !p-5">
+        <Card className="flex items-center justify-between !p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
               <Sparkles size={18} />
             </div>
             <div>
-              <p className="text-sm font-semibold">Coach financier</p>
-              <p className="text-xs text-muted-light dark:text-muted-dark">
+              <p className="text-sm font-normal">Coach financier</p>
+              <p className="text-xs font-light text-muted-light dark:text-muted-dark">
                 Des conseils basés sur tes habitudes
               </p>
             </div>
