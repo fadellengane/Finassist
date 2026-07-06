@@ -1,5 +1,6 @@
 import type { MonthForecast } from "@/lib/types";
 import { MonthCard } from "@/components/previsions/MonthCard";
+import { Reveal } from "@/components/ui/Reveal";
 
 export function ForecastTimeline({
   months,
@@ -10,8 +11,10 @@ export function ForecastTimeline({
 }) {
   return (
     <div className="space-y-4">
-      {months.map((month) => (
-        <MonthCard key={month.monthKey} month={month} onSelect={() => onSelectMonth(month)} />
+      {months.map((month, i) => (
+        <Reveal key={month.monthKey} index={i}>
+          <MonthCard month={month} onSelect={() => onSelectMonth(month)} />
+        </Reveal>
       ))}
     </div>
   );

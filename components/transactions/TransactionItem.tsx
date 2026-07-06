@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Pencil, Trash2 } from "lucide-react";
 import type { Transaction } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/finance/categories";
@@ -18,50 +19,60 @@ export function TransactionItem({
   const sign = tx.flow === "income" ? "+" : "−";
 
   return (
-    <div className="flex items-center justify-between border-b border-line-light py-4 last:border-none dark:border-line-dark">
-      <div className="flex items-center gap-3">
-        <span
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ backgroundColor: meta.color }}
-        />
-        <div>
-          <p className="text-[15px] font-normal">
-            {tx.name}
-            {tx.installment && (
-              <span className="ml-1.5 text-xs font-light text-muted-light dark:text-muted-dark">
-                {tx.installment.installmentIndex}/{tx.installment.totalInstallments}
-              </span>
-            )}
-          </p>
-          <p className="text-xs font-light text-muted-light dark:text-muted-dark">
-            {meta.label} · {formatDateShort(tx.date)}
-          </p>
+    <motion.div
+      layout
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="overflow-hidden"
+    >
+      <div className="flex items-center justify-between border-b border-line-light py-4 last:border-none dark:border-line-dark">
+        <div className="flex items-center gap-3">
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: meta.color }}
+          />
+          <div>
+            <p className="text-[15px] font-normal">
+              {tx.name}
+              {tx.installment && (
+                <span className="ml-1.5 text-xs font-light text-muted-light dark:text-muted-dark">
+                  {tx.installment.installmentIndex}/{tx.installment.totalInstallments}
+                </span>
+              )}
+            </p>
+            <p className="text-xs font-light text-muted-light dark:text-muted-dark">
+              {meta.label} · {formatDateShort(tx.date)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <span
+            className={`tabular mr-1 text-[15px] font-medium ${
+              tx.flow === "income" ? "text-good" : "text-ink-light dark:text-ink-dark"
+            }`}
+          >
+            {sign} {formatCurrencyPrecise(tx.amount)}
+          </span>
+          <button
+            onClick={() => onEdit(tx)}
+            className="rounded-full p-1.5 text-muted-light transition-colors hover:text-accent dark:text-muted-dark"
+            aria-label="Modifier"
+          >
+            <Pencil size={14} />
+          </button>
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => removeTransaction(tx.id)}
+            className="rounded-full p-1.5 text-muted-light transition-colors hover:text-bad dark:text-muted-dark"
+            aria-label="Supprimer"
+          >
+            <Trash2 size={14} />
+          </motion.button>
         </div>
       </div>
-
-      <div className="flex items-center gap-1">
-        <span
-          className={`tabular mr-1 text-[15px] font-medium ${
-            tx.flow === "income" ? "text-good" : "text-ink-light dark:text-ink-dark"
-          }`}
-        >
-          {sign} {formatCurrencyPrecise(tx.amount)}
-        </span>
-        <button
-          onClick={() => onEdit(tx)}
-          className="rounded-full p-1.5 text-muted-light transition-colors hover:text-accent dark:text-muted-dark"
-          aria-label="Modifier"
-        >
-          <Pencil size={14} />
-        </button>
-        <button
-          onClick={() => removeTransaction(tx.id)}
-          className="rounded-full p-1.5 text-muted-light transition-colors hover:text-bad dark:text-muted-dark"
-          aria-label="Supprimer"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
-    </div>
+    </motion.div>
   );
 }
