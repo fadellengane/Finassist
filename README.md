@@ -43,44 +43,50 @@ dans la barre d'adresse sur desktop).
 ```
 app/
   layout.tsx           → police, manifest PWA, thème, navigation persistante, PageTransition
-  page.tsx              → Accueil
-  transactions/page.tsx  → Transactions
-  previsions/page.tsx     → Prévisions (durée personnalisée + détail par mois)
+  page.tsx              → Accueil / Dashboard (solde, score, reste à vivre, graphiques, épargne)
+  transactions/page.tsx  → Transactions (recherche, filtres, regroupement jour/semaine/mois)
+  previsions/page.tsx     → Prévisions — bascule Liste / Calendrier, durée personnalisée
   epargne/page.tsx         → Épargne (objectifs)
-  simulateur/page.tsx       → Simulateur de scénarios avancés
-  coach/page.tsx             → Coach financier (accessible depuis l'accueil)
+  budgets/page.tsx           → Budgets par catégorie (nouvelle page, accessible depuis l'accueil)
+  simulateur/page.tsx         → Simulateur de scénarios avancés
+  coach/page.tsx                → Coach financier intelligent (accessible depuis l'accueil)
 
 components/
   ui/                    → primitives réutilisables (Card, Button, Sheet, Field, StatusBadge, Reveal)
-  home/                   → BalanceCard, RemainingToLiveCard, RemainingToLiveGauge, SettingsSheet
-  transactions/            → formulaire (ajout + édition) + liste animée
-  previsions/               → frise, sélecteur de durée, détail par mois
+  home/                   → BalanceCard, RemainingToLiveCard, HealthScoreCard, SavingsSummaryCard, SettingsSheet
+  transactions/            → formulaire, recherche, filtres, regroupement, sections repliables
+  previsions/               → frise, durée, calendrier, détail par jour/mois
   epargne/                   → objectifs, création, versement
-  simulateur/                 → sélecteur de scénario, champs dynamiques, comparaison, résultat
-  coach/                       → carte de conseil
-  charts/                       → 4 graphiques Recharts (solde, revenus/dépenses, catégories, épargne)
-  reminders/                     → Sheet des rappels intelligents
-  onboarding/                     → tutoriel d'installation PWA
-  BottomNav.tsx                    → navigation à 4 onglets
-  PageTransition.tsx                 → transition animée entre pages
-  ThemeProvider.tsx / Providers.tsx    → thème + hydratation du store + service worker + tutoriel
+  budgets/                     → carte et formulaire de budget par catégorie
+  simulateur/                   → sélecteur de scénario, champs dynamiques, comparaison, résultat
+  coach/                          → carte de conseil
+  charts/                          → 4 graphiques Recharts (solde, revenus/dépenses, catégories, épargne)
+  reminders/                         → Sheet des rappels intelligents
+  onboarding/                         → tutoriel d'installation PWA
+  BottomNav.tsx                        → navigation à 4 onglets (inchangée)
+  PageTransition.tsx                     → transition animée entre pages
+  ThemeProvider.tsx / Providers.tsx        → thème + hydratation du store + service worker + tutoriel
 
 lib/
-  types.ts                → modèle de données (Transaction, SavingsGoal, Reminder, Scenario…)
-  store.ts                 → état global Zustand + actions + données de démo + onboardingSeen
+  types.ts                → modèle de données (Transaction, SavingsGoal, Budget, HealthScore, Reminder…)
+  store.ts                 → état global Zustand + actions + données de démo + budgets + onboardingSeen
   notifications.ts          → wrapper Notification API, prêt pour un vrai push PWA
   finance/
-    engine.ts                → cœur des calculs (solde, prévisions, reste à vivre, simulateur simple)
-    scenarios.ts               → moteur des scénarios avancés (diff virtuel + comparaison)
-    reminders.ts                 → génération des rappels intelligents
-    goals.ts                      → progression des objectifs d'épargne
-    coach.ts                       → génération des conseils
-    categories.ts                   → registre des types/catégories
+    engine.ts                → cœur des calculs (solde, prévisions, reste à vivre, occurrences par jour/mois)
+    scenarios.ts               → scénarios avancés + suggestion de meilleur timing
+    healthScore.ts               → score de santé financière (0-100) pondéré
+    budgets.ts                     → statut des budgets par catégorie
+    reminders.ts                     → génération des rappels intelligents
+    goals.ts                          → progression des objectifs d'épargne
+    coach.ts                           → conseils contextuels (budgets, objectifs, prévisions)
+    categories.ts                       → registre des types/catégories
+    transactionGrouping.ts                → regroupement jour/semaine/mois
+    transactionFilters.ts                   → filtres combinables (mot-clé, catégorie, montant, date)
   ui/
-    chartTheme.ts                    → couleurs et styles partagés pour les graphiques
+    chartTheme.ts                            → couleurs et styles partagés pour les graphiques
   utils/
-    format.ts                         → devises, dates, mois
-    id.ts                               → identifiants uniques
+    format.ts                                 → devises, dates, mois
+    id.ts                                       → identifiants uniques
 
 public/
   manifest.json            → PWA installable
@@ -160,6 +166,10 @@ aux composants qui les consomment.
 - **Multi-utilisateur** : le store n'a aucune notion d'identité pour
   l'instant ; ajouter un `userId` sur les entités et un espace de stockage
   par utilisateur ne casse pas le modèle existant.
+- **Budgets, objectifs, rappels** suivent tous le même schéma que
+  `Transaction` (entités typées dans `lib/types.ts`, actions isolées dans
+  `store.ts`) : la même bascule vers une synchronisation cloud ou une
+  connexion bancaire s'appliquera à eux sans changement de structure.
 
 ## Ce qui est volontairement simplifié en V1
 
@@ -290,6 +300,91 @@ store Zustand existant, persisté). Étapes illustrées et animées
 (Framer Motion), bouton "Passer" à tout moment. Peut être relancé depuis
 **Réglages → Revoir le tutoriel d'installation**, qui ne fait que remettre
 `onboardingSeen` à `false`.
+
+## Version "finance personnelle complète" — calendrier, dashboard, score, budgets
+
+Cette itération ajoute les 7 évolutions demandées, **sans ajouter d'onglet**
+et sans dupliquer ce qui existait déjà. Deux choix d'architecture méritent
+d'être expliqués :
+
+- **Le "Dashboard" demandé a été fusionné avec l'Accueil existant**, plutôt
+  que créé comme 5ᵉ page séparée. L'Accueil remplissait déjà une grande
+  partie du rôle (solde, reste à vivre, graphique d'évolution) ; je l'ai
+  complété avec le score de santé, la répartition par catégorie et le
+  résumé d'épargne plutôt que de dupliquer ces informations ailleurs. Le
+  résultat correspond exactement à la liste demandée : solde actuel, reste
+  à vivre, revenus/dépenses du mois, épargne totale, objectifs, dépenses
+  par catégorie, plusieurs graphiques — le tout sur un seul écran cohérent.
+- **Le calendrier est une vue à l'intérieur de l'onglet Prévisions**
+  (bascule "Liste / Calendrier"), plutôt qu'un 5ᵉ onglet. Il affiche
+  exactement ce qui est demandé (revenus, dépenses, abonnements,
+  échéances, versements d'épargne, jour par jour, avec détail au clic) —
+  seul son point d'entrée diffère d'une nouvelle page dans la barre de
+  navigation, pour respecter les "quatre onglets" de l'architecture
+  d'origine. **Budgets**, en revanche, est une nouvelle page à part
+  entière (comme Simulateur et Coach déjà existants), accessible depuis
+  une carte sur l'Accueil.
+
+### 1. Calendrier financier
+
+`components/previsions/CalendarView.tsx` — grille mensuelle avec
+navigation mois précédent/suivant, pastilles colorées par catégorie sous
+chaque jour (jusqu'à 3), réutilisant `getTransactionsForMonth()` déjà
+existant. Toucher un jour ouvre `DayDetailSheet` avec le détail complet et
+le mouvement net du jour.
+
+### 2. Dashboard (fusionné à l'Accueil)
+
+L'Accueil affiche désormais, dans l'ordre : solde disponible, statut,
+score de santé, reste à vivre, évolution du solde, répartition par
+catégorie, résumé de l'épargne, puis les accès rapides (Simulateur, Coach,
+Budgets).
+
+### 3. Score de santé financière
+
+`lib/finance/healthScore.ts` (`computeHealthScore()`) — moyenne pondérée
+de 6 sous-scores indépendants (épargne de sécurité, régularité des
+revenus, maîtrise des dépenses, reste à vivre, risque de découvert,
+respect des budgets), chacun ajustable isolément (poids en haut du
+fichier). Génère aussi une liste d'explications ✅ / ⚠️. Affiché sur
+l'Accueil via `HealthScoreCard` (jauge radiale Recharts).
+
+### 4. Coach financier intelligent
+
+`lib/finance/coach.ts` croise désormais budgets, objectifs et prévisions :
+conseil budgétaire contextuel (au lieu d'une estimation générique si un
+budget existe pour la catégorie), accélération d'objectif d'épargne
+("atteins ton objectif X mois plus tôt en mettant Y € de plus"), alerte
+sur un mois à risque à venir. Le simulateur va plus loin : pour un achat
+qui met en risque, `suggestBetterTimingForPurchase()` (dans
+`scenarios.ts`) teste automatiquement quelques dates de report (7, 14,
+21, 30, 45, 60 jours) et suggère la première qui repasse au vert — c'est
+la traduction concrète de "si tu attends deux semaines, ton risque
+disparaît", affichée directement dans `ScenarioResultCard`.
+
+### 5. Budgets par catégorie
+
+`lib/finance/budgets.ts` + entité `Budget` dans le store (un budget par
+catégorie maximum, upsert via `setBudget()`). Page dédiée `/budgets` :
+barre de progression, alerte à 80 % (orange) et au dépassement (rouge).
+
+### 6 & 7. Recherche, filtres et réorganisation de Transactions
+
+La page Transactions a été entièrement repensée :
+
+- **Recherche instantanée** (`SearchBar`) sur le nom et le commentaire.
+- **Filtres rapides par catégorie** (`CategoryQuickFilters`, puces
+  horizontales) et **filtres avancés combinables** (`FilterSheet` : type,
+  montant min/max, plage de dates) — tous les critères de
+  `lib/finance/transactionFilters.ts` (`filterTransactions()`) se
+  combinent entre eux.
+- **Regroupement par jour / semaine / mois** (`GroupModeToggle` +
+  `lib/finance/transactionGrouping.ts`), avec **sections repliables**
+  (`TransactionGroupSection`) affichant le total du groupe dans l'en-tête.
+  Seuls les deux premiers groupes sont ouverts par défaut — pensé pour
+  rester fluide même avec plusieurs centaines de transactions.
+- Le graphique de répartition par catégorie reste en tête de page pour le
+  contexte visuel immédiat.
 
 ## Personnaliser
 

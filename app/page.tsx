@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Sparkles, ChevronRight, Settings, Bell } from "lucide-react";
+import { Sparkles, ChevronRight, Settings, Bell, Wallet } from "lucide-react";
 import { useFinanceStore } from "@/lib/store";
 import { BalanceCard } from "@/components/home/BalanceCard";
 import { RemainingToLiveCard } from "@/components/home/RemainingToLiveCard";
+import { HealthScoreCard } from "@/components/home/HealthScoreCard";
+import { SavingsSummaryCard } from "@/components/home/SavingsSummaryCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -13,6 +15,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { SettingsSheet } from "@/components/home/SettingsSheet";
 import { ReminderSheet } from "@/components/reminders/ReminderSheet";
 import { BalanceEvolutionChart } from "@/components/charts/BalanceEvolutionChart";
+import { CategoryBreakdownChart } from "@/components/charts/CategoryBreakdownChart";
 import {
   getCurrentBalance,
   getBalanceAfterCommitments,
@@ -22,9 +25,10 @@ import {
   riskFromBalance,
 } from "@/lib/finance/engine";
 import { generateReminders } from "@/lib/finance/reminders";
+import { computeHealthScore } from "@/lib/finance/healthScore";
 
 export default function HomePage() {
-  const { transactions, goals, startingBalance, startingBalanceDate } = useFinanceStore();
+  const { transactions, goals, budgets, startingBalance, startingBalanceDate } = useFinanceStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
 
@@ -34,6 +38,7 @@ export default function HomePage() {
   const forecast3Months = forecast[2]?.soldeFinal ?? available;
   const safeToSpend = getSafeToSpend(transactions, startingBalance, startingBalanceDate);
   const remaining = getRemainingToLive(transactions, startingBalance, startingBalanceDate);
+  const health = computeHealthScore(transactions, goals, budgets, startingBalance, startingBalanceDate);
 
   const worstBalance = Math.min(available, ...forecast.map((m) => m.soldeFinal));
   const risk = riskFromBalance(worstBalance);
@@ -79,36 +84,67 @@ export default function HomePage() {
       </Reveal>
 
       <Reveal index={2}>
-        <RemainingToLiveCard data={remaining} />
+        <HealthScoreCard health={health} />
       </Reveal>
 
       <Reveal index={3}>
-        <BalanceEvolutionChart forecast={forecast} />
+        <RemainingToLiveCard data={remaining} />
       </Reveal>
 
       <Reveal index={4}>
+        <BalanceEvolutionChart forecast={forecast} />
+      </Reveal>
+
+      <Reveal index={5}>
+        <CategoryBreakdownChart transactions={transactions} />
+      </Reveal>
+
+      <Reveal index={6}>
+        <SavingsSummaryCard goals={goals} transactions={transactions} />
+      </Reveal>
+
+      <Reveal index={7}>
         <Link href="/simulateur">
           <Button fullWidth>Simuler un scénario</Button>
         </Link>
       </Reveal>
 
-      <Reveal index={5}>
-        <Link href="/coach">
-          <Card className="flex items-center justify-between !p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
-                <Sparkles size={18} />
+      <Reveal index={8}>
+        <div className="grid grid-cols-1 gap-3">
+          <Link href="/coach">
+            <Card className="flex items-center justify-between !p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-normal">Coach financier</p>
+                  <p className="text-xs font-light text-muted-light dark:text-muted-dark">
+                    Des conseils basés sur tes habitudes
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-normal">Coach financier</p>
-                <p className="text-xs font-light text-muted-light dark:text-muted-dark">
-                  Des conseils basés sur tes habitudes
-                </p>
+              <ChevronRight size={18} className="text-muted-light dark:text-muted-dark" />
+            </Card>
+          </Link>
+
+          <Link href="/budgets">
+            <Card className="flex items-center justify-between !p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
+                  <Wallet size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-normal">Budgets</p>
+                  <p className="text-xs font-light text-muted-light dark:text-muted-dark">
+                    Suis tes plafonds par catégorie
+                  </p>
+                </div>
               </div>
-            </div>
-            <ChevronRight size={18} className="text-muted-light dark:text-muted-dark" />
-          </Card>
-        </Link>
+              <ChevronRight size={18} className="text-muted-light dark:text-muted-dark" />
+            </Card>
+          </Link>
+        </div>
       </Reveal>
 
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />

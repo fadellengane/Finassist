@@ -1,23 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
+import { useMemo, useState } from "react";
+import { Plus, SlidersHorizontal } from "lucide-react";
 import { useFinanceStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Sheet } from "@/components/ui/Sheet";
 import { Reveal } from "@/components/ui/Reveal";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
-import { TransactionItem } from "@/components/transactions/TransactionItem";
 import { CategoryBreakdownChart } from "@/components/charts/CategoryBreakdownChart";
-import type { Transaction } from "@/lib/types";
+import { SearchBar } from "@/components/transactions/SearchBar";
+import { CategoryQuickFilters } from "@/components/transactions/CategoryQuickFilters";
+import { FilterSheet } from "@/components/transactions/FilterSheet";
+import { GroupModeToggle } from "@/components/transactions/GroupModeToggle";
+import { TransactionGroupSection } from "@/components/transactions/TransactionGroupSection";
+import { EMPTY_FILTERS, countActiveFilters, filterTransactions } from "@/lib/finance/transactionFilters";
+import { groupTransactions } from "@/lib/finance/transactionGrouping";
+import type { Category, Transaction, TransactionGroupMode } from "@/lib/types";
 
 export default function TransactionsPage() {
   const transactions = useFinanceStore((s) => s.transactions);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [groupMode, setGroupMode] = useState<TransactionGroupMode>("month");
 
-  const sorted = [...transactions].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const sorted = useMemo(
+    () => [...transactions].sort((a, b) => (a.date < b.date ? 1 : -1)),
+    [transactions]
+  );
+
+  const filtered = useMemo(() => filterTransactions(sorted, filters), [sorted, filters]);
+  const groups = useMemo(() => groupTransactions(filtered, groupMode), [filtered, groupMode]);
+  const activeFilterCount = countActiveFilters(filters);
+
+  function toggleCategory(category: Category) {
+    const categories = filters.categories.includes(category)
+      ? filters.categories.filter((c) => c !== category)
+      : [...filters.categories, category];
+    setFilters({ ...filters, categories });
+  }
 
   function handleEdit(tx: Transaction) {
     setEditing(tx);
@@ -51,18 +73,43 @@ export default function TransactionsPage() {
         <CategoryBreakdownChart transactions={transactions} />
       </Reveal>
 
-      {sorted.length === 0 ? (
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <SearchBar value={filters.keyword} onChange={(keyword) => setFilters({ ...filters, keyword })} />
+        </div>
+        <button
+          onClick={() => setFilterSheetOpen(true)}
+          className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-2xl border border-line-light text-muted-light dark:border-line-dark dark:text-muted-dark"
+          aria-label="Filtres avancés"
+        >
+          <SlidersHorizontal size={17} strokeWidth={1.75} />
+          {activeFilterCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-medium text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      <CategoryQuickFilters selected={filters.categories} onToggle={toggleCategory} />
+
+      <GroupModeToggle mode={groupMode} onChange={setGroupMode} />
+
+      {groups.length === 0 ? (
         <Card className="text-center text-sm font-light text-muted-light dark:text-muted-dark">
-          Aucune transaction pour l&rsquo;instant. Ajoute ton premier mouvement.
+          Aucune transaction ne correspond à ta recherche.
         </Card>
       ) : (
-        <Card padded={false} className="px-6">
-          <AnimatePresence initial={false}>
-            {sorted.map((tx) => (
-              <TransactionItem key={tx.id} tx={tx} onEdit={handleEdit} />
-            ))}
-          </AnimatePresence>
-        </Card>
+        <div className="space-y-4">
+          {groups.map((group, i) => (
+            <TransactionGroupSection
+              key={group.key}
+              group={group}
+              defaultOpen={i < 2}
+              onEdit={handleEdit}
+            />
+          ))}
+        </div>
       )}
 
       <Sheet
@@ -72,6 +119,13 @@ export default function TransactionsPage() {
       >
         <TransactionForm onDone={handleClose} existing={editing ?? undefined} />
       </Sheet>
+
+      <FilterSheet
+        open={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        filters={filters}
+        onChange={setFilters}
+      />
     </div>
   );
 }

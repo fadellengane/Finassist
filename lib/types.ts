@@ -136,4 +136,71 @@ export interface ScenarioResult {
   worstMonthLabel: string;
   minBalance: number;
   deltaAtHorizon: number; // impact sur le solde final de la période simulée
+  suggestion?: string; // ex. "attends 2 semaines et ton risque disparaît"
+}
+
+// ============================================================================
+// Budgets par catégorie
+// ============================================================================
+
+export interface Budget {
+  id: string;
+  category: Category;
+  monthlyLimit: number;
+}
+
+export type BudgetAlert = "ok" | "warning" | "exceeded";
+
+export interface BudgetStatus {
+  budget: Budget;
+  spent: number;
+  remaining: number;
+  ratio: number; // 0 → 1+ (peut dépasser 1 si le budget est dépassé)
+  alert: BudgetAlert;
+}
+
+// ============================================================================
+// Score de santé financière
+// ============================================================================
+
+export interface HealthScoreFactor {
+  key: string;
+  label: string;
+  score: number; // 0 → 100
+  weight: number; // poids relatif dans la moyenne pondérée
+}
+
+export interface HealthScoreExplanation {
+  tone: "good" | "warning";
+  text: string;
+}
+
+export interface HealthScore {
+  score: number; // 0 → 100
+  factors: HealthScoreFactor[];
+  explanations: HealthScoreExplanation[];
+}
+
+// ============================================================================
+// Regroupement des transactions (page Transactions réorganisée)
+// ============================================================================
+
+export type TransactionGroupMode = "day" | "week" | "month";
+
+export interface TransactionGroup {
+  key: string;
+  label: string;
+  items: Transaction[];
+  totalIncome: number;
+  totalExpense: number;
+}
+
+export interface TransactionFilters {
+  keyword: string;
+  categories: Category[];
+  types: TransactionType[];
+  minAmount: number | null;
+  maxAmount: number | null;
+  dateFrom: string | null;
+  dateTo: string | null;
 }

@@ -1,7 +1,7 @@
 import type { ScenarioResult, ScenarioType, Transaction } from "@/lib/types";
 import { buildInstallmentTransactions, getForecast, riskFromBalance } from "@/lib/finance/engine";
 import { generateId } from "@/lib/utils/id";
-import { todayISO } from "@/lib/utils/format";
+import { formatDateShort, todayISO } from "@/lib/utils/format";
 
 /**
  * ============================================================================
@@ -173,6 +173,51 @@ function buildScenarioDiff(
   return { added, removedIds };
 }
 
+const DELAY_CANDIDATES_DAYS = [7, 14, 21, 30, 45, 60];
+
+function addDaysISO(dateISO: string, days: number): string {
+  const d = new Date(dateISO + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Pour un achat qui met la situation en risque, teste quelques dates de
+ * départ retardées et retourne la première qui repasse le mois le plus
+ * difficile en "stable" — à l'image d'un conseil du coach du type
+ * "attends deux semaines et le risque disparaît".
+ */
+function suggestBetterTimingForPurchase(
+  input: ScenarioInput,
+  existingTransactions: Transaction[],
+  startingBalance: number,
+  startingBalanceDate: string,
+  months: number
+): string | undefined {
+  const baseStart = input.startDate || todayISO();
+
+  for (const days of DELAY_CANDIDATES_DAYS) {
+    const candidateStart = addDaysISO(baseStart, days);
+    const candidateTransactions = [
+      ...existingTransactions,
+      ...buildInstallmentTransactions({
+        name: input.name || "Achat simulé",
+        price: input.price || 0,
+        installmentsCount: Math.max(1, input.installmentsCount || 1),
+        startDate: candidateStart,
+      }),
+    ];
+    const forecast = getForecast(candidateTransactions, startingBalance, startingBalanceDate, months);
+    const worst = forecast.reduce((min, m) => (m.soldeFinal < min.soldeFinal ? m : min), forecast[0]);
+
+    if (riskFromBalance(worst.soldeFinal) === "stable") {
+      return `Si tu attends jusqu'au ${formatDateShort(candidateStart)}, ton risque financier disparaît.`;
+    }
+  }
+
+  return undefined;
+}
+
 export function simulateScenario(
   input: ScenarioInput,
   existingTransactions: Transaction[],
@@ -204,6 +249,17 @@ export function simulateScenario(
   const baselineEnd = baseline[baseline.length - 1]?.soldeFinal ?? 0;
   const scenarioEnd = scenario[scenario.length - 1]?.soldeFinal ?? 0;
 
+  let suggestion: string | undefined;
+  if (input.type === "achat" && risk !== "stable") {
+    suggestion = suggestBetterTimingForPurchase(
+      input,
+      existingTransactions,
+      startingBalance,
+      startingBalanceDate,
+      months
+    );
+  }
+
   return {
     baseline,
     scenario,
@@ -212,5 +268,6 @@ export function simulateScenario(
     worstMonthLabel: worst.monthLabel,
     minBalance: worst.soldeFinal,
     deltaAtHorizon: scenarioEnd - baselineEnd,
+    suggestion,
   };
 }

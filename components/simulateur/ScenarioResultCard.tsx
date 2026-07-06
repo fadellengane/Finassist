@@ -1,3 +1,4 @@
+import { Lightbulb } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { formatCurrency } from "@/lib/utils/format";
 import type { ScenarioResult } from "@/lib/types";
@@ -17,6 +18,13 @@ export function ScenarioResultCard({ result }: { result: ScenarioResult }) {
           value={`${deltaSign} ${formatCurrency(Math.abs(result.deltaAtHorizon))}`}
         />
       </div>
+
+      {result.suggestion && (
+        <div className="mt-5 flex items-start gap-3 rounded-2xl bg-accent-soft p-4">
+          <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent" strokeWidth={1.75} />
+          <p className="text-sm font-normal text-accent">{result.suggestion}</p>
+        </div>
+      )}
     </Card>
   );
 }

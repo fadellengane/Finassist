@@ -6,6 +6,8 @@ import { getForecast } from "@/lib/finance/engine";
 import { ForecastTimeline } from "@/components/previsions/ForecastTimeline";
 import { DurationPicker } from "@/components/previsions/DurationPicker";
 import { MonthDetailSheet } from "@/components/previsions/MonthDetailSheet";
+import { PrevisionsViewToggle } from "@/components/previsions/PrevisionsViewToggle";
+import { CalendarView } from "@/components/previsions/CalendarView";
 import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
 import { Reveal } from "@/components/ui/Reveal";
 import type { MonthForecast } from "@/lib/types";
@@ -13,6 +15,7 @@ import type { MonthForecast } from "@/lib/types";
 export default function PrevisionsPage() {
   const { transactions, startingBalance, startingBalanceDate } = useFinanceStore();
   const [months, setMonths] = useState(3);
+  const [view, setView] = useState<"liste" | "calendrier">("liste");
   const [selectedMonth, setSelectedMonth] = useState<MonthForecast | null>(null);
 
   const forecast = getForecast(transactions, startingBalance, startingBalanceDate, months);
@@ -22,23 +25,35 @@ export default function PrevisionsPage() {
       <div className="px-1">
         <h1 className="text-2xl font-medium tracking-tight">Prévisions</h1>
         <p className="mt-1.5 text-sm font-light text-muted-light dark:text-muted-dark">
-          Choisis une durée, puis touche un mois pour voir le détail.
+          {view === "liste"
+            ? "Choisis une durée, puis touche un mois pour voir le détail."
+            : "Touche un jour pour voir ce qui s'y passe."}
         </p>
       </div>
 
-      <Reveal>
-        <IncomeExpenseChart forecast={forecast} />
-      </Reveal>
+      <PrevisionsViewToggle view={view} onChange={setView} />
 
-      <DurationPicker months={months} onChange={setMonths} />
+      {view === "liste" ? (
+        <>
+          <Reveal>
+            <IncomeExpenseChart forecast={forecast} />
+          </Reveal>
 
-      <ForecastTimeline months={forecast} onSelectMonth={setSelectedMonth} />
+          <DurationPicker months={months} onChange={setMonths} />
 
-      <MonthDetailSheet
-        month={selectedMonth}
-        transactions={transactions}
-        onClose={() => setSelectedMonth(null)}
-      />
+          <ForecastTimeline months={forecast} onSelectMonth={setSelectedMonth} />
+
+          <MonthDetailSheet
+            month={selectedMonth}
+            transactions={transactions}
+            onClose={() => setSelectedMonth(null)}
+          />
+        </>
+      ) : (
+        <Reveal>
+          <CalendarView transactions={transactions} />
+        </Reveal>
+      )}
     </div>
   );
 }

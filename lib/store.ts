@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Category, Recurrence, SavingsGoal, Transaction, TransactionType } from "@/lib/types";
+import type { Budget, Category, Recurrence, SavingsGoal, Transaction, TransactionType } from "@/lib/types";
 import { TRANSACTION_TYPE_META } from "@/lib/finance/categories";
 import { generateId } from "@/lib/utils/id";
 import { buildInstallmentTransactions } from "@/lib/finance/engine";
@@ -32,6 +32,7 @@ interface FinanceState {
   startingBalanceDate: string;
   transactions: Transaction[];
   goals: SavingsGoal[];
+  budgets: Budget[];
   onboardingSeen: boolean;
 
   setHasHydrated: (v: boolean) => void;
@@ -44,6 +45,8 @@ interface FinanceState {
   removeGoal: (id: string) => void;
   contributeToGoal: (goalId: string, amount: number, date: string) => void;
   setOnboardingSeen: (seen: boolean) => void;
+  setBudget: (category: Category, monthlyLimit: number) => void;
+  removeBudget: (id: string) => void;
 }
 
 function seedTransactions(): Transaction[] {
@@ -76,6 +79,10 @@ export const useFinanceStore = create<FinanceState>()(
       startingBalanceDate: todayISO(),
       transactions: seedTransactions(),
       onboardingSeen: false,
+      budgets: [
+        { id: generateId("budget"), category: "restauration", monthlyLimit: 150 },
+        { id: generateId("budget"), category: "abonnements", monthlyLimit: 70 },
+      ],
       goals: [
         {
           id: generateId("goal"),
@@ -172,6 +179,23 @@ export const useFinanceStore = create<FinanceState>()(
       },
 
       setOnboardingSeen: (seen) => set({ onboardingSeen: seen }),
+
+      setBudget: (category, monthlyLimit) => {
+        const existing = get().budgets.find((b) => b.category === category);
+        if (existing) {
+          set({
+            budgets: get().budgets.map((b) =>
+              b.id === existing.id ? { ...b, monthlyLimit } : b
+            ),
+          });
+        } else {
+          set({
+            budgets: [...get().budgets, { id: generateId("budget"), category, monthlyLimit }],
+          });
+        }
+      },
+
+      removeBudget: (id) => set({ budgets: get().budgets.filter((b) => b.id !== id) }),
     }),
     {
       name: "finassist-storage",
