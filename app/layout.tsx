@@ -3,6 +3,7 @@ import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { BottomNav } from "@/components/BottomNav";
+import { PageTransition } from "@/components/PageTransition";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -42,7 +43,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans font-normal bg-canvas-light dark:bg-canvas-dark text-ink-light dark:text-ink-dark antialiased">
         <Providers>
           <div className="mx-auto flex min-h-screen max-w-md flex-col">
-            <main className="flex-1 pb-28 safe-top">{children}</main>
+            <main className="flex-1 pb-28 safe-top">
+              <PageTransition>{children}</PageTransition>
+            </main>
             <BottomNav />
           </div>
         </Providers>

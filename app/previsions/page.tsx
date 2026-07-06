@@ -6,6 +6,8 @@ import { getForecast } from "@/lib/finance/engine";
 import { ForecastTimeline } from "@/components/previsions/ForecastTimeline";
 import { DurationPicker } from "@/components/previsions/DurationPicker";
 import { MonthDetailSheet } from "@/components/previsions/MonthDetailSheet";
+import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
+import { Reveal } from "@/components/ui/Reveal";
 import type { MonthForecast } from "@/lib/types";
 
 export default function PrevisionsPage() {
@@ -23,6 +25,10 @@ export default function PrevisionsPage() {
           Choisis une durée, puis touche un mois pour voir le détail.
         </p>
       </div>
+
+      <Reveal>
+        <IncomeExpenseChart forecast={forecast} />
+      </Reveal>
 
       <DurationPicker months={months} onChange={setMonths} />
 

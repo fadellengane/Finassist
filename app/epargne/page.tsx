@@ -5,9 +5,11 @@ import { Plus } from "lucide-react";
 import { useFinanceStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Sheet } from "@/components/ui/Sheet";
+import { Reveal } from "@/components/ui/Reveal";
 import { GoalCard } from "@/components/epargne/GoalCard";
 import { GoalForm } from "@/components/epargne/GoalForm";
 import { ContributeForm } from "@/components/epargne/ContributeForm";
+import { SavingsProgressChart } from "@/components/charts/SavingsProgressChart";
 
 export default function EpargnePage() {
   const { goals, transactions } = useFinanceStore();
@@ -27,19 +29,22 @@ export default function EpargnePage() {
         </button>
       </div>
 
+      {goals.length > 0 && (
+        <Reveal>
+          <SavingsProgressChart goals={goals} transactions={transactions} />
+        </Reveal>
+      )}
+
       {goals.length === 0 ? (
         <Card className="text-center text-sm font-light text-muted-light dark:text-muted-dark">
           Aucun objectif pour l&rsquo;instant. Crée-en un pour commencer à épargner.
         </Card>
       ) : (
         <div className="space-y-5">
-          {goals.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              goal={goal}
-              transactions={transactions}
-              onContribute={setContributeGoalId}
-            />
+          {goals.map((goal, i) => (
+            <Reveal key={goal.id} index={i}>
+              <GoalCard goal={goal} transactions={transactions} onContribute={setContributeGoalId} />
+            </Reveal>
           ))}
         </div>
       )}
