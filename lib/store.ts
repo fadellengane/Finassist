@@ -32,6 +32,7 @@ interface FinanceState {
   startingBalanceDate: string;
   transactions: Transaction[];
   goals: SavingsGoal[];
+  onboardingSeen: boolean;
 
   setHasHydrated: (v: boolean) => void;
   setStartingBalance: (amount: number, date: string) => void;
@@ -42,6 +43,7 @@ interface FinanceState {
   addGoal: (goal: { name: string; targetAmount: number; targetDate: string }) => string;
   removeGoal: (id: string) => void;
   contributeToGoal: (goalId: string, amount: number, date: string) => void;
+  setOnboardingSeen: (seen: boolean) => void;
 }
 
 function seedTransactions(): Transaction[] {
@@ -73,6 +75,7 @@ export const useFinanceStore = create<FinanceState>()(
       startingBalance: 900,
       startingBalanceDate: todayISO(),
       transactions: seedTransactions(),
+      onboardingSeen: false,
       goals: [
         {
           id: generateId("goal"),
@@ -167,6 +170,8 @@ export const useFinanceStore = create<FinanceState>()(
         };
         set({ transactions: [tx, ...get().transactions] });
       },
+
+      setOnboardingSeen: (seen) => set({ onboardingSeen: seen }),
     }),
     {
       name: "finassist-storage",

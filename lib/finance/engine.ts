@@ -1,4 +1,11 @@
-import type { MonthForecast, MonthOccurrence, RiskLevel, SimulationResult, Transaction } from "@/lib/types";
+import type {
+  MonthForecast,
+  MonthOccurrence,
+  RemainingToLive,
+  RiskLevel,
+  SimulationResult,
+  Transaction,
+} from "@/lib/types";
 import { addMonths, daysBetween, monthKey, monthLabel, monthsBetween, todayISO } from "@/lib/utils/format";
 import { generateId } from "@/lib/utils/id";
 
@@ -247,6 +254,41 @@ export function getBalanceAfterCommitments(
 ): number {
   const forecast = getForecast(transactions, startingBalance, startingBalanceDate, 1);
   return forecast[0]?.soldeFinal ?? getCurrentBalance(transactions, startingBalance, startingBalanceDate);
+}
+
+/**
+ * "Reste à vivre" — vision resserrée sur le mois en cours, complémentaire de
+ * l'accueil : combien est réellement rentré/sorti ce mois-ci (occurrences
+ * réelles via `getTransactionsForMonth`), et ce qu'il reste jusqu'à la fin
+ * du mois compte tenu des engagements déjà connus.
+ */
+export function getRemainingToLive(
+  transactions: Transaction[],
+  startingBalance: number,
+  startingBalanceDate: string
+): RemainingToLive {
+  const now = new Date();
+  const occurrences = getTransactionsForMonth(transactions, now);
+
+  let revenusMois = 0;
+  let depensesMois = 0;
+  for (const { transaction } of occurrences) {
+    if (transaction.flow === "income") revenusMois += transaction.amount;
+    else depensesMois += transaction.amount;
+  }
+
+  const soldeActuel = getCurrentBalance(transactions, startingBalance, startingBalanceDate);
+  const disponibleFinMois = getBalanceAfterCommitments(transactions, startingBalance, startingBalanceDate);
+  const depensesRestantes = Math.max(0, soldeActuel - disponibleFinMois);
+
+  return {
+    soldeActuel,
+    revenusMois,
+    depensesMois,
+    depensesRestantes,
+    disponibleFinMois,
+    risk: riskFromBalance(disponibleFinMois),
+  };
 }
 
 interface SimulateInput {

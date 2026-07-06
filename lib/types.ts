@@ -86,3 +86,54 @@ export interface MonthOccurrence {
   transaction: Transaction;
   occurrenceDate: string; // ISO yyyy-mm-dd
 }
+
+// ============================================================================
+// Rappels intelligents
+// ============================================================================
+
+export type ReminderType = "abonnement" | "echeance" | "risque" | "epargne_stagnante";
+export type ReminderSeverity = "info" | "warning" | "danger";
+
+export interface Reminder {
+  id: string;
+  type: ReminderType;
+  title: string;
+  detail: string;
+  severity: ReminderSeverity;
+  date?: string; // ISO — date de l'échéance concernée, si applicable
+}
+
+// ============================================================================
+// Carte "Reste à vivre"
+// ============================================================================
+
+export interface RemainingToLive {
+  soldeActuel: number;
+  revenusMois: number;
+  depensesMois: number;
+  depensesRestantes: number;
+  disponibleFinMois: number;
+  risk: RiskLevel;
+}
+
+// ============================================================================
+// Simulations avancées (scénarios)
+// ============================================================================
+
+export type ScenarioType =
+  | "achat"
+  | "salaire"
+  | "abonnement_ajout"
+  | "abonnement_suppression"
+  | "depense_recurrente"
+  | "remboursement_anticipe";
+
+export interface ScenarioResult {
+  baseline: MonthForecast[];
+  scenario: MonthForecast[];
+  message: string;
+  risk: RiskLevel;
+  worstMonthLabel: string;
+  minBalance: number;
+  deltaAtHorizon: number; // impact sur le solde final de la période simulée
+}
