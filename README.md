@@ -9,7 +9,8 @@ me permettre cette dépense ? »*
 
 - **Next.js 14** (App Router) + **TypeScript**
 - **Tailwind CSS** — design system iOS (coins arrondis, ombres discrètes, mode clair/sombre)
-- **Framer Motion** — micro-animations, bottom sheets
+- **Framer Motion** — micro-animations, bottom sheets, transitions de page
+- **Recharts** — graphiques (solde, revenus/dépenses, catégories, épargne)
 - **Zustand** (+ `persist`) — état global, sauvegardé en `localStorage`
 - Aucun backend, aucune base de données — tout vit côté client pour la V1
 
@@ -41,36 +42,45 @@ dans la barre d'adresse sur desktop).
 
 ```
 app/
-  layout.tsx           → police, manifest PWA, thème, navigation persistante
+  layout.tsx           → police, manifest PWA, thème, navigation persistante, PageTransition
   page.tsx              → Accueil
   transactions/page.tsx  → Transactions
-  previsions/page.tsx     → Prévisions (frise des 3 prochains mois)
+  previsions/page.tsx     → Prévisions (durée personnalisée + détail par mois)
   epargne/page.tsx         → Épargne (objectifs)
-  simulateur/page.tsx       → Simulateur d'achat (accessible depuis l'accueil)
+  simulateur/page.tsx       → Simulateur de scénarios avancés
   coach/page.tsx             → Coach financier (accessible depuis l'accueil)
 
 components/
-  ui/                    → primitives réutilisables (Card, Button, Sheet, Field, StatusBadge)
-  home/                   → BalanceCard, SettingsSheet
-  transactions/            → formulaire + liste
-  previsions/               → frise chronologique + carte mensuelle
+  ui/                    → primitives réutilisables (Card, Button, Sheet, Field, StatusBadge, Reveal)
+  home/                   → BalanceCard, RemainingToLiveCard, RemainingToLiveGauge, SettingsSheet
+  transactions/            → formulaire (ajout + édition) + liste animée
+  previsions/               → frise, sélecteur de durée, détail par mois
   epargne/                   → objectifs, création, versement
-  simulateur/                 → formulaire + résultat
+  simulateur/                 → sélecteur de scénario, champs dynamiques, comparaison, résultat
   coach/                       → carte de conseil
-  BottomNav.tsx                 → navigation à 4 onglets
-  ThemeProvider.tsx / Providers.tsx → thème + hydratation du store + service worker
+  charts/                       → 4 graphiques Recharts (solde, revenus/dépenses, catégories, épargne)
+  reminders/                     → Sheet des rappels intelligents
+  onboarding/                     → tutoriel d'installation PWA
+  BottomNav.tsx                    → navigation à 4 onglets
+  PageTransition.tsx                 → transition animée entre pages
+  ThemeProvider.tsx / Providers.tsx    → thème + hydratation du store + service worker + tutoriel
 
 lib/
-  types.ts                → modèle de données (Transaction, SavingsGoal, etc.)
-  store.ts                 → état global Zustand + actions + données de démo
+  types.ts                → modèle de données (Transaction, SavingsGoal, Reminder, Scenario…)
+  store.ts                 → état global Zustand + actions + données de démo + onboardingSeen
+  notifications.ts          → wrapper Notification API, prêt pour un vrai push PWA
   finance/
-    engine.ts                → cœur des calculs (solde, prévisions, simulateur)
-    goals.ts                  → progression des objectifs d'épargne
-    coach.ts                   → génération des conseils
-    categories.ts                → registre des types/catégories
+    engine.ts                → cœur des calculs (solde, prévisions, reste à vivre, simulateur simple)
+    scenarios.ts               → moteur des scénarios avancés (diff virtuel + comparaison)
+    reminders.ts                 → génération des rappels intelligents
+    goals.ts                      → progression des objectifs d'épargne
+    coach.ts                       → génération des conseils
+    categories.ts                   → registre des types/catégories
+  ui/
+    chartTheme.ts                    → couleurs et styles partagés pour les graphiques
   utils/
-    format.ts                    → devises, dates, mois
-    id.ts                          → identifiants uniques
+    format.ts                         → devises, dates, mois
+    id.ts                               → identifiants uniques
 
 public/
   manifest.json            → PWA installable
@@ -163,6 +173,11 @@ aux composants qui les consomment.
   dépenses restauration, un objectif « Voyage ») sont préchargées au
   premier lancement pour que l'app ne soit pas vide — supprimez-les
   librement depuis l'onglet Transactions.
+- Les notifications (`lib/notifications.ts`) sont des notifications
+  **locales** du navigateur : elles ne fonctionnent que si l'app (ou
+  l'onglet) est ouverte. Recevoir un rappel app fermée nécessite un vrai
+  push serveur — voir les commentaires du fichier pour le chemin
+  d'évolution complet.
 
 ## Évolutions récentes
 
@@ -186,6 +201,95 @@ aux composants qui les consomment.
   des cartes et des sheets augmenté, ombres encore plus discrètes, icônes à
   trait plus fin. La police Manrope charge désormais aussi la graisse 300
   pour ce rendu plus fin.
+
+## Version "premium" — graphiques, rappels, scénarios avancés
+
+Cette itération ajoute six évolutions majeures **sans changer
+l'architecture existante** : mêmes 4 onglets, même store Zustand, mêmes
+fonctions de calcul (`engine.ts`) — uniquement étendues, jamais réécrites.
+
+### 1. Graphiques (Recharts)
+
+Quatre graphiques, chacun placé sur l'onglet le plus pertinent plutôt que
+tous entassés sur l'accueil (cohérence avec le principe « minimaliste ») :
+
+| Graphique | Fichier | Où |
+|---|---|---|
+| Évolution du solde prévue | `components/charts/BalanceEvolutionChart.tsx` | Accueil |
+| Revenus vs dépenses par mois | `components/charts/IncomeExpenseChart.tsx` | Prévisions |
+| Répartition des dépenses par catégorie | `components/charts/CategoryBreakdownChart.tsx` | Transactions |
+| Progression des objectifs d'épargne | `components/charts/SavingsProgressChart.tsx` | Épargne |
+
+Les couleurs sont centralisées dans `lib/ui/chartTheme.ts` (miroir de
+`tailwind.config.ts` — Recharts a besoin de vraies valeurs hexadécimales,
+pas de classes Tailwind). Chaque graphique s'adapte au thème clair/sombre
+via `useTheme()` et anime son apparition nativement (props `animationDuration`
+de Recharts).
+
+### 2. Rappels intelligents
+
+`lib/finance/reminders.ts` (`generateReminders()`) analyse l'état courant
+et détecte : abonnements et échéances des 7 prochains jours, mois à risque
+sur les 3 prochains mois, objectifs d'épargne sans versement depuis 30
+jours. Accessible via l'icône cloche sur l'accueil (`ReminderSheet`), avec
+un point rouge si des rappels sont actifs.
+
+`lib/notifications.ts` isole l'appel à la Notification API du navigateur
+(`requestNotificationPermission`, `notify`) derrière une interface stable.
+Le fichier documente précisément la marche à suivre pour brancher un vrai
+push PWA plus tard (VAPID, `pushManager.subscribe()`, backend, évènement
+`push` dans `public/sw.js`) sans avoir à changer l'appelant.
+
+### 3. Simulations avancées
+
+Le simulateur (`app/simulateur/page.tsx`) propose maintenant 6 types de
+scénario via `ScenarioTypePicker` : achat, hausse/baisse de salaire, ajout
+d'abonnement, résiliation d'abonnement, nouvelle dépense récurrente,
+remboursement anticipé d'un achat en plusieurs fois.
+
+Le moteur (`lib/finance/scenarios.ts`, `simulateScenario()`) traduit chaque
+scénario en une modification **virtuelle** (ajouts + suppressions par id)
+de la liste de transactions, sans jamais toucher au store réel, puis
+compare la prévision de base à la prévision avec scénario
+(`ScenarioComparisonChart`) sur la durée choisie (6 mois par défaut).
+L'ancien `simulatePurchase()` reste intact dans `engine.ts` (non
+supprimé, non modifié) : rien ne dépendait de lui en dehors de la page
+simulateur, qui utilise désormais le moteur de scénarios pour une
+expérience unifiée.
+
+### 4. Micro-interactions
+
+- Transition de page (fondu + léger slide) via `components/PageTransition.tsx`,
+  monté une fois dans `app/layout.tsx`.
+- Apparition en cascade des cartes via `components/ui/Reveal.tsx`
+  (wrapper Framer Motion générique, réutilisé sur l'accueil, les
+  transactions, les prévisions et l'épargne).
+- Ajout/suppression de transaction animés (`TransactionItem` + `AnimatePresence`
+  dans la page Transactions).
+- Boutons avec retour tactile (`whileTap`) déjà présents, complétés sur les
+  actions de suppression.
+- Graphiques et Bottom Sheets déjà animés nativement (Recharts / Framer
+  Motion spring existant, non modifié).
+
+### 5. Carte "Reste à vivre"
+
+`lib/finance/engine.ts` expose `getRemainingToLive()`, qui réutilise
+`getCurrentBalance()` et `getBalanceAfterCommitments()` (aucune logique de
+calcul dupliquée) pour donner : solde actuel, revenus/dépenses du mois
+(occurrences réelles via `getTransactionsForMonth`), dépenses restantes
+prévues, et disponible jusqu'à la fin du mois. Affichée sur l'accueil
+(`RemainingToLiveCard`) avec une jauge à 3 zones
+(`RemainingToLiveGauge` : confortable / à surveiller / risqué).
+
+### 6. Tutoriel d'installation PWA
+
+`components/onboarding/InstallTutorial.tsx` détecte iOS/Android via
+`navigator.userAgent`, ne s'affiche que si l'app n'est pas déjà installée
+(`display-mode: standalone`) et pas déjà vue (`onboardingSeen` dans le
+store Zustand existant, persisté). Étapes illustrées et animées
+(Framer Motion), bouton "Passer" à tout moment. Peut être relancé depuis
+**Réglages → Revoir le tutoriel d'installation**, qui ne fait que remettre
+`onboardingSeen` à `false`.
 
 ## Personnaliser
 
