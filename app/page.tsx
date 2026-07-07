@@ -24,11 +24,19 @@ import {
   getSafeToSpend,
   riskFromBalance,
 } from "@/lib/finance/engine";
-import { generateReminders } from "@/lib/finance/reminders";
+import { generateReminders, filterRemindersByPreferences } from "@/lib/finance/reminders";
 import { computeHealthScore } from "@/lib/finance/healthScore";
 
 export default function HomePage() {
-  const { transactions, goals, budgets, startingBalance, startingBalanceDate } = useFinanceStore();
+  const {
+    transactions,
+    goals,
+    budgets,
+    startingBalance,
+    startingBalanceDate,
+    notificationPreferences,
+    habitPreferences,
+  } = useFinanceStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
 
@@ -43,7 +51,8 @@ export default function HomePage() {
   const worstBalance = Math.min(available, ...forecast.map((m) => m.soldeFinal));
   const risk = riskFromBalance(worstBalance);
 
-  const reminders = generateReminders(transactions, goals, startingBalance, startingBalanceDate);
+  const allReminders = generateReminders(transactions, goals, startingBalance, startingBalanceDate);
+  const reminders = filterRemindersByPreferences(allReminders, notificationPreferences);
 
   return (
     <div className="space-y-6 px-6 pt-8">
@@ -111,22 +120,24 @@ export default function HomePage() {
 
       <Reveal index={8}>
         <div className="grid grid-cols-1 gap-3">
-          <Link href="/coach">
-            <Card className="flex items-center justify-between !p-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
-                  <Sparkles size={18} />
+          {habitPreferences.personalizedTips && (
+            <Link href="/coach">
+              <Card className="flex items-center justify-between !p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
+                    <Sparkles size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-normal">Coach financier</p>
+                    <p className="text-xs font-light text-muted-light dark:text-muted-dark">
+                      Des conseils basés sur tes habitudes
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-normal">Coach financier</p>
-                  <p className="text-xs font-light text-muted-light dark:text-muted-dark">
-                    Des conseils basés sur tes habitudes
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-muted-light dark:text-muted-dark" />
-            </Card>
-          </Link>
+                <ChevronRight size={18} className="text-muted-light dark:text-muted-dark" />
+              </Card>
+            </Link>
+          )}
 
           <Link href="/budgets">
             <Card className="flex items-center justify-between !p-6">

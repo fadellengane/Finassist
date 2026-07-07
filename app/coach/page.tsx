@@ -8,8 +8,8 @@ import { CoachTipCard } from "@/components/coach/CoachTipCard";
 import { Reveal } from "@/components/ui/Reveal";
 
 export default function CoachPage() {
-  const { transactions, goals, budgets, startingBalance, startingBalanceDate } = useFinanceStore();
-  const tips = generateCoachTips(transactions, goals, budgets, startingBalance, startingBalanceDate);
+  const { transactions, goals, budgets, startingBalance, startingBalanceDate, habitPreferences } = useFinanceStore();
+  const tips = generateCoachTips(transactions, goals, budgets, startingBalance, startingBalanceDate, habitPreferences);
 
   return (
     <div className="space-y-6 px-6 pt-8">
